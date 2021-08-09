@@ -1,0 +1,6 @@
+dbname: Boticario
+username: 
+password: 
+params: 
+  dialect: sqlite 
+  storage: VendasRev-sequelize.sqlite3
