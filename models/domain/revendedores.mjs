@@ -1,8 +1,10 @@
+import {default as bcrypt} from "bcrypt";
+
 const _key = Symbol("key");
 const _nome = Symbol("nome");
 const _cpf = Symbol("cpf");
 const _email = Symbol("email");
-const _senha = Symbol("senha");
+const _senhaHash = Symbol("senhaHash");
 
 export class Revendedor {
   constructor(key, nome, cpf, email, senha) {
@@ -10,7 +12,7 @@ export class Revendedor {
     this[_nome] = nome;
     this[_cpf] = cpf;
     this[_email] = email;
-    this[_senha] = senha;
+    this[_senhaHash] = gerarSenhaHash(senha);
   }
 
   get key() {
@@ -28,11 +30,11 @@ export class Revendedor {
   set email(novoEmail) {
     this[_email] = novoEmail;
   }
-  get senha() {
-    return this[_senha];
+  get senhaHash() {
+    return this[_senhaHash];
   }
-  set senha(novaSenha) {
-    this[_senha] = novaSenha;
+  set senhaHash(novaSenhaHash) {
+    this[_senhaHash] = novaSenhaHash;
   }
 
   get JSON() {
@@ -53,6 +55,8 @@ export class Revendedor {
     };
   }
 
+  
+
   static fromJSON(json) {
     const data = JSON.parse(json);
     if (
@@ -71,4 +75,9 @@ export class Revendedor {
     const rev = new Revendedor(data.key, data.nome, data.cpf, data.email);
     return rev;
   }
+}
+
+export async function gerarSenhaHash(senha) {
+  const custoHash = 12;
+  return await bcrypt.hash(senha, custoHash)
 }

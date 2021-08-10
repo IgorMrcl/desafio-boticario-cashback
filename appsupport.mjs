@@ -1,11 +1,11 @@
-import { close as sequlzConn } from "./models/sequlz.mjs";
+import { close as CloseSequlzConn } from "./models/sequlz.mjs";
 import { server } from "./app.mjs";
 import { default as DBG } from "debug";
 const debug = DBG("app:debug");
-
+const debugError = DBG("app:error");
 
 async function catchProcessDeath() {  
-  await sequlzConn();
+  await CloseSequlzConn();
   await server.close();
   process.exit(0);
 }

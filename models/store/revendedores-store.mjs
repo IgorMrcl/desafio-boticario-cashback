@@ -51,4 +51,16 @@ export default class RevendedoresStore extends AbstractStore {
       return new Revendedor(rev.key, rev.nome, rev.cpf, rev.email, "");
     }
   }
+
+  async readPassword(cpf) {
+    await connectDB();
+    const rev = await SQRev.findOne({ where: { cpf: cpf } });
+    if (!rev) {
+      throw new Error(`Revendedor não encontrado com o cpf ${cpf}`);
+    } else {
+      const objRev = new Revendedor(rev.Revkey, rev.nome, rev.cpf, rev.email, "");
+      objRev.senhaHash = rev.senha;
+      return objRev;
+    }
+  }
 }

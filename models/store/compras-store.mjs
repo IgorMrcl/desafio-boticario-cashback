@@ -2,9 +2,8 @@ import { Compra } from "../domain/compras.mjs";
 import { AbstractStore } from "./abstract-model-store.mjs";
 import Sequelize from "sequelize";
 import { connectDB as connectSequlz, close as closeSequlz } from "../sequlz.mjs";
-import { default as DBG } from "debug";
+import { DateTime } from "luxon";
 
-const debug = DBG("app:dev");
 let sequelize;
 export class SQComp extends Sequelize.Model {}
 
@@ -15,7 +14,7 @@ async function connectDB() {
     {
       compKey: { type: Sequelize.DataTypes.UUID, defaultValue: Sequelize.UUIDV4, primaryKey: true, unique: true, allowNull: false },
       codigo: Sequelize.DataTypes.STRING,
-      valor: Sequelize.DataTypes.DECIMAL(10,2),
+      valor: Sequelize.DataTypes.DECIMAL(10, 2),
       data: Sequelize.DataTypes.DATEONLY,
       mes: Sequelize.DataTypes.SMALLINT,
       ano: Sequelize.DataTypes.SMALLINT,
@@ -38,13 +37,13 @@ export default class RevendedoresStore extends AbstractStore {
 
   async create(codigo, valor, data, cpf, status) {
     await connectDB();
-    const ndate = new Date(data);
+    const ndate = DateTime.fromISO(data);
     const novaComp = await SQComp.create({
       codigo,
       valor,
       data,
-      mes: ndate.getMonth() + 1,
-      ano: ndate.getFullYear(),
+      mes: ndate.c.month,
+      ano: ndate.c.year,
       cpf,
       status,
     });
@@ -61,22 +60,18 @@ export default class RevendedoresStore extends AbstractStore {
     }
   }
 
-  async comprasList() {
+  async comprasList(cpf) {
     await connectDB();
-    const compras = await SQComp.findAll();
+    const compras = await SQComp.findAll({ where: { cpf: cpf } });
     const ret = compras.map((dbCompra) => {
-      return new Compra(dbCompra.compKey, dbCompra.codigo, dbCompra.valor, dbCompra.data, dbCompra.cpf, dbCompra.status);      
-    });    
+      return new Compra(dbCompra.compKey, dbCompra.codigo, dbCompra.valor, dbCompra.data, dbCompra.cpf, dbCompra.status);
+    });
     return ret;
   }
 
-  async comprasTotalList() {
+  async comprasTotalList(cpf) {
     await connectDB();
-    const compras = await SQComp.findAll({
-      attributes: ['cpf', 'mes', 'ano', [sequelize.fn('sum', sequelize.col('valor')), 'total']],	
-      group : ['cpf', 'mes', 'ano'],    
-      raw: true
-    });
+    const compras = await SQComp.findAll({ where: { cpf: cpf }, attributes: ["cpf", "mes", "ano", [sequelize.fn("sum", sequelize.col("valor")), "total"]], group: ["cpf", "mes", "ano"], raw: true });
     return compras;
   }
 }

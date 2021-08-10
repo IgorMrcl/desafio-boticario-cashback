@@ -1,7 +1,7 @@
 import { default as ComprasStore } from "../store/compras-store.mjs";
 import { default as DBG } from "debug";
+import { DateTime } from "luxon";
 
-const debug = DBG("app:dev");
 const compStore = new ComprasStore();
 
 export async function create(codigo, valor, data, cpf) {
@@ -15,13 +15,13 @@ export async function read(codigo) {
   return compra;
 }
 
-export async function list() {
-  const compras = await compStore.comprasList();
+export async function list(cpf) {
+  const compras = await compStore.comprasList(cpf);
   return compras;
 }
 
-export async function listTotal() {
-  const consultas = await Promise.all([compStore.comprasTotalList(), list()]);
+export async function listComprasCashBack(cpf) {
+  const consultas = await Promise.all([compStore.comprasTotalList(cpf), list(cpf)]);
 
   const compsTotMesAno = consultas[0];
   let compras = consultas[1];
@@ -31,40 +31,37 @@ export async function listTotal() {
     return comp;
   });
 
-  
+  //Transformar em código assincrono
   let newCompras = compras.map((compra) => {
-    
-    const objPercentCashback = comprsPrcntCashBack.find(obj => checkCorrectCashBackPercent(obj, compra));
-    
+    const objPercentCashback = comprsPrcntCashBack.find((obj) => checkCorrectCashBackPercent(obj, compra));
+
     return {
       codigo: compra.codigo,
-      valor: compra.valor,
+      valor: compra.valor.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2,}),
       data: compra.data,
       PercentualCashBack: `${objPercentCashback.percentCashBack}%`,
-      ValorCashBack: compra.valor * (objPercentCashback.percentCashBack / 100),
+      ValorCashBack: (compra.valor * (objPercentCashback.percentCashBack / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2,}),
       status: compra.status,
     };
   });
   return newCompras;
 }
 
+//Transformar em código dinâmico para permitir a entrada de novos ranges via app config
 function defineCashBackPercent(valorVendaMes) {
   switch (true) {
-    case valorVendaMes <= 1000:
-      return 10;
-    case valorVendaMes <= 1500:
-      return 15;
+    case valorVendaMes <= process.env.BONIFICACAO_RANGE1:
+      return process.env.BONIFICACAO_PERCENT1;
+    case valorVendaMes <= process.env.BONIFICACAO_RANGE2:
+      return process.env.BONIFICACAO_PERCENT2;
     default:
-      return 20;
+      return process.env.BONIFICACAO_PERCENT3;
   }
 }
 
-function checkCorrectCashBackPercent(objPercent, compra){
-  const dataCompra = new Date(compra.data);
-  let ret = objPercent.cpf === compra.cpf && objPercent.mes == (dataCompra.getMonth() + 1) && objPercent.ano == dataCompra.getFullYear();
-  // debug(`Comparacao de cpf ${objPercent.cpf} e ${compra.cpf} é igual a ${objPercent.cpf === compra.cpf}`);
-  // debug(`Comparacao de mes ${objPercent.mes} e ${(dataCompra.getMonth() + 1)} é igual a ${objPercent.mes == (dataCompra.getMonth() + 1)}`);
-  // debug(`Comparacao de ano ${objPercent.ano} e ${dataCompra.getFullYear()} é igual a ${objPercent.ano == dataCompra.getFullYear()}`);
-  // debug(`Comparacao final deu ${ret}`);
+function checkCorrectCashBackPercent(objPercent, compra) {
+  const dataCompra = DateTime.fromISO(compra.data);
+  let ret = objPercent.cpf === compra.cpf && objPercent.mes == dataCompra.c.month && objPercent.ano == dataCompra.c.year;
   return ret;
 }
+
