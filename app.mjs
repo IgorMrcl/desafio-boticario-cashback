@@ -9,7 +9,7 @@ import { router as indexRouter } from "./routes/index.mjs";
 import { default as DBG } from "debug";
 import { approotdir } from "./approotdir.mjs";
 import { onError, onListening, normalizePort } from "./appsupport.mjs";
-import "./models/estrategia-autenticacao.mjs"
+import "./models/auth-strategy.mjs"
 //import { default as passport } from "passport";
 
 const __dirname = approotdir;

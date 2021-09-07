@@ -57,9 +57,5 @@ typings/
 .next
 
 #Local SQLite database
-.sqlite3
-VendasRev-sequelize.sqlite3
-
 .vscode/
-VendasRev-sequelize.sqlite3
 *.sqlite3
